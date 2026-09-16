@@ -1,4 +1,5 @@
-﻿using Application.Exceptions;
+﻿using Application.Constants;
+using Application.Exceptions;
 using Application.Interfaces.Services;
 using AutoMapper;
 using Domain.Models;
@@ -22,6 +23,7 @@ public class RoleService : IRoleService
     {
         await _roleManager.CreateAsync(roleToCreate);
     }
+
 
     public async Task<Role?> GetRoleByNameAsync(string roleName)
     {
@@ -74,5 +76,20 @@ public class RoleService : IRoleService
             throw new ArgumentException(ErrorMessages.GetMessage(ErrorCode.ArgumentIsEmpty), nameof(roleName));
 
         return await _roleManager.RoleExistsAsync(roleName);
+    }
+
+    public async Task<IList<Role>> GetAllRolesAsync()
+    {
+        var roles = new List<Role>();
+
+        foreach (var roleName in UserRole.GetRoleNames())
+        {
+            var role = await _roleManager.FindByNameAsync(roleName);
+
+            if (role is not null)
+                roles.Add(_mapper.Map<Role>(role));
+        }
+
+        return roles;
     }
 }

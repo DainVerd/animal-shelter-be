@@ -1,8 +1,12 @@
-﻿using Application.Exceptions;
+﻿using Application.CORS.Queries;
+using Application.Dtos;
+using Application.Exceptions;
 using Asp.Versioning;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using System.Security.Claims;
 
 namespace WebApi.Controllers;
 
@@ -12,8 +16,11 @@ namespace WebApi.Controllers;
 [Authorize]
 public class LookupController : Controller
 {
-    public LookupController()
+    private readonly IMediator _mediator;
+
+    public LookupController(IMediator mediator)
     {
+        _mediator = mediator;
     }
 
     /// <summary>
@@ -51,5 +58,27 @@ public class LookupController : Controller
         var successResponse = new List<SelectListItem>(selectListItems);
 
         return Ok(successResponse);
+    }
+
+    [HttpGet("user-roles")]
+    [ProducesResponseType(typeof(IEnumerable<SelectListItem>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GetAvailableInviteRoles(
+    CancellationToken cancellationToken = default)
+    {
+        var userId = User.FindFirstValue(
+            Application.Constants.CustomClaimType.UserId);
+
+        if (string.IsNullOrEmpty(userId))
+            throw new UnauthorizedException("Claims does not contain userId!");
+
+        if (!int.TryParse(userId, out var id))
+            throw new ApplicationException("Failed to get id of current user");
+
+        var result = await _mediator.Send(
+            new GetAvailableInviteRolesQuery { UserId = id },
+            cancellationToken);
+
+        return Ok(result);
     }
 }
