@@ -23,49 +23,4 @@ public class UserController : Controller
     {
         _mediator = mediator;
     }
-
-    [HttpPost("invites")]
-    [ProducesResponseType(typeof(int), StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
-    [Authorize(Roles = $"{UserRole.SuperAdmin}, {UserRole.Admin}")]
-    public async Task<IActionResult> SendInvite(
-    [FromBody] SendInviteViewModel model,
-    CancellationToken cancellationToken = default)
-    {
-        var userIdClaim = User.FindFirstValue(CustomClaimType.UserId);
-
-        if (string.IsNullOrWhiteSpace(userIdClaim))
-            throw new UnauthorizedException(
-                "Claims does not contain userId.");
-
-        if (!int.TryParse(userIdClaim, out var invitedByUserId))
-            throw new UnauthorizedException(
-                "Invalid userId claim.");
-
-        var inviteId = await _mediator.Send(
-            new SendInviteCommand
-            {
-                Email = model.Email,
-                Roles = model.Roles,
-                InvitedByUserId = invitedByUserId
-            },
-            cancellationToken);
-
-        return StatusCode(
-            StatusCodes.Status201Created,
-            inviteId);
-    }
-
-    [HttpPost("invites/accept")]
-    [ProducesResponseType(typeof(SignInResponseDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public async Task<IActionResult> AcceptInvite(
-    [FromBody] AcceptInviteCommand command)
-    {
-        var result = await _mediator.Send(command);
-
-        return Ok(result);
-    }
 }
