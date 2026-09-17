@@ -9,4 +9,5 @@ public interface IRoleService
     Task<IList<Role>> GetRolesForUserAsync(User user);
     Task<bool> IsUserInRoleAsync(User user, string roleName);
     Task CreateRoleAsync(Role roleToCreate);
+    Task<IList<Role>> GetAllRolesAsync();
 }
