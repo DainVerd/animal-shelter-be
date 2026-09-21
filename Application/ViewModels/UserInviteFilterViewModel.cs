@@ -4,7 +4,7 @@ namespace Application.ViewModels;
 
 public class UserInviteFilterViewModel
 {
-    public string? Email { get; set; } 
+    public string? EmailSearchText { get; set; } 
     public string? RoleInclude { get; set; } 
     public DateTimeOffset? ExpiresFrom { get; set; }
     public DateTimeOffset? ExpiresTo { get; set; }
