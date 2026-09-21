@@ -1,9 +1,15 @@
 ﻿using Application.Constants;
 using Application.CORS.Commands;
+using Application.CORS.Queries;
 using Application.Dtos;
+using Application.Dtos.Invites;
+using Application.Entities.Common;
 using Application.Exceptions;
+using Application.ViewModels;
+using Application.ViewModels.Animal;
 using Application.ViewModels.User;
 using Asp.Versioning;
+using Domain.Models;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -31,8 +37,8 @@ public class InviteController : Controller
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     [Authorize(Roles = $"{UserRole.SuperAdmin}, {UserRole.Admin}")]
     public async Task<IActionResult> SendInvite(
-[FromBody] SendInviteViewModel model,
-CancellationToken cancellationToken = default)
+    [FromBody] SendInviteViewModel model,
+    CancellationToken cancellationToken = default)
     {
         var userIdClaim = User.FindFirstValue(CustomClaimType.UserId);
 
@@ -71,4 +77,20 @@ CancellationToken cancellationToken = default)
 
         return Ok(result);
     }
+
+    [HttpGet("")]
+    [ProducesResponseType(typeof(PaginatedList<UserInviteDto>), StatusCodes.Status200OK)]
+    //[Authorize(Roles = $"{UserRole.SuperAdmin}, {UserRole.Admin}")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetUserInvites(
+    [FromQuery] PaginationParams paging,
+    [FromQuery] UserInviteFilterViewModel filter,
+    CancellationToken cancellationToken = default)
+    {
+        var query = new GetAllUserInvitesQuery { Filter = filter, Paging = paging };
+        var response = await _mediator.Send(query, cancellationToken);
+
+        return Ok(response);
+    }
+
 }

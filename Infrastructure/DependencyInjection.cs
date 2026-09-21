@@ -76,6 +76,8 @@ public static class DependencyInjection
 
         services.Configure<DomainSettings>(configuration.GetSection("DomainSettings"));
 
+        services.AddScoped<IUserInviteService, UserInviteService>();
+
         return services;
     }
 }
