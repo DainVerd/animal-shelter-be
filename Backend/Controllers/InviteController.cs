@@ -2,6 +2,7 @@
 using Application.CORS.Commands;
 using Application.CORS.Queries;
 using Application.Dtos;
+using Application.Dtos.Invites;
 using Application.Entities.Common;
 using Application.Exceptions;
 using Application.ViewModels;

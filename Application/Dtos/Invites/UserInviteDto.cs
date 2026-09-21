@@ -1,6 +1,6 @@
 ﻿using Domain.Enums;
 
-namespace Application.Dtos;
+namespace Application.Dtos.Invites;
 
 public class UserInviteDto
 {
@@ -10,7 +10,7 @@ public class UserInviteDto
     public DateTimeOffset ExpiresAt { get; set; }
     public DateTimeOffset? AcceptedAt { get; set; }
     public InviteStatus Status { get; set; }
-    public int InvitedByUserId { get; set; }
+    public InviteUserDto InvitedBy { get; set; } = null!;
     public DateTimeOffset CreatedAt { get; set; }
-    public int? AcceptedUserId { get; set; }
+    public InviteUserDto? AcceptedUser { get; set; }
 }

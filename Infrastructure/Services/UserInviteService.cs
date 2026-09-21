@@ -25,6 +25,6 @@ public class UserInviteService : IUserInviteService
         if (pagination is null)
             throw new ArgumentNullException(nameof(pagination), ErrorMessages.GetArgumentMessage(ArgumentErrorCode.ArgumentIsEmpty));
 
-        return await _uow.UserInvites.GetPagginatedListAsync(filter, pagination, ct);
+        return await _uow.UserInvites.GetPaginatedListAsync(filter, pagination, ct);
     }
 }

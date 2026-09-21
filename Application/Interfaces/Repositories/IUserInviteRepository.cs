@@ -13,5 +13,5 @@ public interface IUserInviteRepository : IGenericRepository<UserInvite>
         string tokenHash,
         CancellationToken cancellationToken = default);
 
-    Task<PaginatedList<UserInvite>> GetPagginatedListAsync(UserInviteFilter filter, PaginationParams pagination, CancellationToken cancellationToken = default);
+    Task<PaginatedList<UserInvite>> GetPaginatedListAsync(UserInviteFilter filter, PaginationParams pagination, CancellationToken cancellationToken = default);
 }

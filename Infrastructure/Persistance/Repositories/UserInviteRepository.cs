@@ -35,10 +35,11 @@ public class UserInviteRepository : GenericRepository<UserInvite>, IUserInviteRe
             cancellationToken);
     }
 
-    public Task<PaginatedList<UserInvite>> GetPagginatedListAsync(UserInviteFilter filter, PaginationParams pagination, CancellationToken cancellationToken = default)
+    public Task<PaginatedList<UserInvite>> GetPaginatedListAsync(UserInviteFilter filter, PaginationParams pagination, CancellationToken cancellationToken = default)
     {
         var query = _dbSet
             .AsQueryable()
+            .Include(x => x.InvitedByUser)
             .AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(filter.EmailSearchText))

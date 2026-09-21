@@ -1,4 +1,4 @@
-﻿using Application.Dtos;
+﻿using Application.Dtos.Invites;
 using Application.Entities;
 using Application.Entities.Common;
 using Application.Exceptions;
