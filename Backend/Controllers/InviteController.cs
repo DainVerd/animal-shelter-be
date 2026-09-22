@@ -6,10 +6,8 @@ using Application.Dtos.Invites;
 using Application.Entities.Common;
 using Application.Exceptions;
 using Application.ViewModels;
-using Application.ViewModels.Animal;
 using Application.ViewModels.User;
 using Asp.Versioning;
-using Domain.Models;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -80,8 +78,7 @@ public class InviteController : Controller
 
     [HttpGet("")]
     [ProducesResponseType(typeof(PaginatedList<UserInviteDto>), StatusCodes.Status200OK)]
-    //[Authorize(Roles = $"{UserRole.SuperAdmin}, {UserRole.Admin}")]
-    [AllowAnonymous]
+    [Authorize(Roles = $"{UserRole.SuperAdmin}, {UserRole.Admin}")]
     public async Task<IActionResult> GetUserInvites(
     [FromQuery] PaginationParams paging,
     [FromQuery] UserInviteFilterViewModel filter,
