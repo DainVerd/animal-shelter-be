@@ -40,7 +40,8 @@ public class LookupController : Controller
         {
             { "gender", typeof(Domain.Enums.Gender) },
             { "size", typeof(Domain.Enums.AnimalSize) },
-            { "temperament", typeof(Domain.Enums.Temperament) }
+            { "temperament", typeof(Domain.Enums.Temperament) },
+            { "invitestatus", typeof(Domain.Enums.InviteStatus) }
         };
 
         if (!enumTypes.TryGetValue(enumName.ToLower(), out var enumType))
