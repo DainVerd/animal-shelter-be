@@ -70,16 +70,15 @@ public class UserInviteRepository : GenericRepository<UserInvite>, IUserInviteRe
             query = query.Where(a => a.CreatedAt <= filter.CreatedTo);
 
 
-        // TODO: implement sorting by columns
-        //query = pagination.SortBy?.ToLower() switch
-        //{
-        //    "name" => pagination.IsDescending ? query.OrderByDescending(a => a.Name) : query.OrderBy(a => a.Name),
-        //    "breed" => pagination.IsDescending ? query.OrderByDescending(a => a.Breed) : query.OrderBy(a => a.Breed),
-        //    "date" => pagination.IsDescending ? query.OrderByDescending(a => a.AdmissionDate) : query.OrderBy(a => a.AdmissionDate),
-        //    "gender" => pagination.IsDescending ? query.OrderByDescending(a => a.Gender) : query.OrderBy(a => a.Gender),
-        //    "dateofbirth" => pagination.IsDescending ? query.OrderByDescending(a => a.DateOfBirth) : query.OrderBy(a => a.DateOfBirth),
-        //    _ => query.OrderBy(a => a.Id)
-        //};
+        query = pagination.SortBy?.ToLower() switch
+        {
+            "email" => pagination.IsDescending ? query.OrderByDescending(a => a.Email) : query.OrderBy(a => a.Email),
+            "status" => pagination.IsDescending ? query.OrderByDescending(a => a.Status) : query.OrderBy(a => a.Status),
+            "invitedBy" => pagination.IsDescending ? query.OrderByDescending(a => a.InvitedByUser.UserName) : query.OrderBy(a => a.InvitedByUser.UserName),
+            "createdAt" => pagination.IsDescending ? query.OrderByDescending(a => a.CreatedAt) : query.OrderBy(a => a.CreatedAt),
+            "expiresAt" => pagination.IsDescending ? query.OrderByDescending(a => a.ExpiresAt) : query.OrderBy(a => a.ExpiresAt),
+            _ => query.OrderBy(a => a.Id)
+        };
 
         return PaginatedList<UserInvite>.CreateAsync(query, pagination.PageNumber, pagination.PageSize, cancellationToken);
     }
