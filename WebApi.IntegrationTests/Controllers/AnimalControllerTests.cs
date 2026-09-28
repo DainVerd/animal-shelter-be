@@ -4,6 +4,7 @@ using Domain.Enums;
 using System.Net;
 using System.Net.Http.Json;
 using WebApi.IntegrationTests.Extensions;
+using WebApi.IntegrationTests.Factories;
 using WebApi.IntegrationTests.Infrastructure;
 
 namespace WebApi.IntegrationTests.Controllers;
@@ -12,11 +13,13 @@ public class AnimalControllerTests
     : IClassFixture<CustomWebApplicationFactory>
 {
     private readonly HttpClient _client;
+    private readonly CustomWebApplicationFactory _factory;
 
     public AnimalControllerTests(
         CustomWebApplicationFactory factory)
     {
         _client = factory.CreateClient();
+        _factory = factory;
     }
 
     [Fact]
@@ -278,5 +281,148 @@ public class AnimalControllerTests
         Assert.Equal(
             HttpStatusCode.NotFound,
             getResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateAnimal_WithUserRole_ReturnsForbidden()
+    {
+        // Arrange
+        const string email = "integration-user@example.com";
+        const string password = "TestUser123!";
+
+        await _factory.CreateUserAsync(
+            email,
+            password,
+            UserRole.User);
+
+        await _client.AuthenticateAsync(
+            UserRole.User,
+            email,
+            password);
+
+        using var content =
+            new MultipartFormDataContent();
+
+        // Act
+        var response = await _client.PostAsync(
+            "/api/v1/animals",
+            content);
+
+        // Assert
+        Assert.Equal(
+            HttpStatusCode.Forbidden,
+            response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateAnimal_ThenUpdateAnimal_ReturnsUpdatedAnimal()
+    {
+        // Arrange
+        await _client.AuthenticateAsync(
+            UserRole.SuperAdmin);
+
+        using var createContent =
+            AnimalRequestFactory
+                .CreateValidCreateRequest();
+
+        var createResponse =
+            await _client.PostAsync(
+                "/api/v1/animals",
+                createContent);
+
+        Assert.Equal(
+            HttpStatusCode.Created,
+            createResponse.StatusCode);
+
+        var animalId =
+            await createResponse.Content
+                .ReadFromJsonAsync<int>();
+
+        Assert.True(animalId > 0);
+
+        // Get created animal so we know its image IDs.
+        var initialGetResponse =
+            await _client.GetAsync(
+                $"/api/v1/animals/{animalId}");
+
+        Assert.Equal(
+            HttpStatusCode.OK,
+            initialGetResponse.StatusCode);
+
+        var initialAnimal =
+            await initialGetResponse.Content
+                .ReadFromJsonAsync<AnimalDto>();
+
+        Assert.NotNull(initialAnimal);
+        Assert.NotEmpty(initialAnimal.Images);
+
+        var existingPhotoIds =
+            initialAnimal.Images
+                .Select(x => x.Id)
+                .ToList();
+
+        // Update
+        using var updateContent =
+            AnimalRequestFactory
+                .CreateValidUpdateRequest(
+                    animalId,
+                    existingPhotoIds);
+
+        var updateResponse =
+            await _client.PutAsync(
+                "/api/v1/animals",
+                updateContent);
+
+        Assert.Equal(
+            HttpStatusCode.OK,
+            updateResponse.StatusCode);
+
+        // Get again
+        var getResponse =
+            await _client.GetAsync(
+                $"/api/v1/animals/{animalId}");
+
+        Assert.Equal(
+            HttpStatusCode.OK,
+            getResponse.StatusCode);
+
+        var updatedAnimal =
+            await getResponse.Content
+                .ReadFromJsonAsync<AnimalDto>();
+
+        Assert.NotNull(updatedAnimal);
+
+        Assert.Equal(
+            "Updated Integration Dog",
+            updatedAnimal.Name);
+
+        Assert.Equal(
+            "Golden Retriever",
+            updatedAnimal.Breed);
+
+        Assert.Equal(
+            "Updated by integration test",
+            updatedAnimal.Description);
+
+        Assert.Equal(
+            Gender.Female,
+            updatedAnimal.Gender);
+
+        Assert.Equal(
+            AnimalSize.Large,
+            updatedAnimal.Size);
+
+        Assert.True(
+            updatedAnimal.IsSterilized);
+
+        Assert.True(
+            updatedAnimal.IsVaccinated);
+
+        Assert.Equal(
+            new DateOnly(2021, 3, 10),
+            updatedAnimal.DateOfBirth);
+
+        Assert.NotEmpty(
+            updatedAnimal.Images);
     }
 }

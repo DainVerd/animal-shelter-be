@@ -1,5 +1,7 @@
 ﻿using Application.Interfaces.Services;
+using Domain.Models;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
@@ -66,5 +68,58 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 
             services.AddSingleton<IFileStorageService, FakeFileStorageService>();
         });
+    }
+
+    public async Task CreateUserAsync(
+        string email,
+        string password,
+        string role)
+    {
+        using var scope = Services.CreateScope();
+
+        var userManager =
+            scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+
+        var user = await userManager.FindByEmailAsync(email);
+
+        if (user is null)
+        {
+            user = new User
+            {
+                Email = email,
+                UserName = email,
+                EmailConfirmed = true,
+                RequirePasswordChange = false
+            };
+
+            var createResult =
+                await userManager.CreateAsync(user, password);
+
+            if (!createResult.Succeeded)
+            {
+                var errors = string.Join(
+                    ", ",
+                    createResult.Errors.Select(x => x.Description));
+
+                throw new InvalidOperationException(
+                    $"Failed to create integration test user: {errors}");
+            }
+        }
+
+        if (!await userManager.IsInRoleAsync(user, role))
+        {
+            var roleResult =
+                await userManager.AddToRoleAsync(user, role);
+
+            if (!roleResult.Succeeded)
+            {
+                var errors = string.Join(
+                    ", ",
+                    roleResult.Errors.Select(x => x.Description));
+
+                throw new InvalidOperationException(
+                    $"Failed to add integration test role: {errors}");
+            }
+        }
     }
 }
