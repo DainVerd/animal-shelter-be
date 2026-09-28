@@ -18,8 +18,10 @@ namespace WebApi.IntegrationTests.Infrastructure;
 public class CustomWebApplicationFactory
     : WebApplicationFactory<Program>
 {
-    private const string TestConnectionString =
-        "Host=localhost;Port=5432;Database=petspets_test;Username=petspets;Password=petspets_dev_password";
+    private static readonly string TestConnectionString =
+    Environment.GetEnvironmentVariable(
+        "TEST_DATABASE_CONNECTION_STRING")
+    ?? "Host=localhost;Port=5432;Database=petspets_test;Username=petspets;Password=petspets_dev_password";
 
     private Respawner? _respawner;
 
