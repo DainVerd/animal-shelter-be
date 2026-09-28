@@ -10,23 +10,19 @@ using WebApi.IntegrationTests.Infrastructure;
 namespace WebApi.IntegrationTests.Controllers;
 
 public class AnimalControllerTests
-    : IClassFixture<CustomWebApplicationFactory>
+    : IntegrationTestBase
 {
-    private readonly HttpClient _client;
-    private readonly CustomWebApplicationFactory _factory;
-
     public AnimalControllerTests(
         CustomWebApplicationFactory factory)
+        : base(factory)
     {
-        _client = factory.CreateClient();
-        _factory = factory;
     }
 
     [Fact]
     public async Task GetAllAnimals_WithoutAuthentication_ReturnsUnauthorized()
     {
         // Act
-        var response = await _client.GetAsync("/api/v1/animals");
+        var response = await Client.GetAsync("/api/v1/animals");
 
         // Assert
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
@@ -36,10 +32,10 @@ public class AnimalControllerTests
     public async Task GetAllAnimals_WithAuthentication_ReturnsOk()
     {
         // Arrange
-        await _client.AuthenticateAsync(UserRole.SuperAdmin);
+        await Client.AuthenticateAsync(UserRole.SuperAdmin);
 
         // Act
-        var response = await _client.GetAsync("/api/v1/animals");
+        var response = await Client.GetAsync("/api/v1/animals");
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -49,7 +45,7 @@ public class AnimalControllerTests
     public async Task CreateAnimal_WithSuperAdminRole_ReturnsCreated()
     {
         // Arrange
-        await _client.AuthenticateAsync(UserRole.SuperAdmin);
+        await Client.AuthenticateAsync(UserRole.SuperAdmin);
 
         using var content = new MultipartFormDataContent();
 
@@ -83,7 +79,7 @@ public class AnimalControllerTests
             "animal.jpg");
 
         // Act
-        var response = await _client.PostAsync(
+        var response = await Client.PostAsync(
             "/api/v1/animals",
             content);
 
@@ -105,7 +101,7 @@ public class AnimalControllerTests
         using var content = new MultipartFormDataContent();
 
         // Act
-        var response = await _client.PostAsync(
+        var response = await Client.PostAsync(
             "/api/v1/animals",
             content);
 
@@ -119,7 +115,7 @@ public class AnimalControllerTests
     public async Task CreateAnimal_ThenGetAnimal_ReturnsCreatedAnimal()
     {
         // Arrange
-        await _client.AuthenticateAsync(UserRole.SuperAdmin);
+        await Client.AuthenticateAsync(UserRole.SuperAdmin);
 
         const string name = "Integration Dog";
         const string breed = "Labrador";
@@ -173,7 +169,7 @@ public class AnimalControllerTests
             "animal.jpg");
 
         // Act - Create
-        var createResponse = await _client.PostAsync(
+        var createResponse = await Client.PostAsync(
             "/api/v1/animals",
             content);
 
@@ -188,7 +184,7 @@ public class AnimalControllerTests
         Assert.True(animalId > 0);
 
         // Act - Get
-        var getResponse = await _client.GetAsync(
+        var getResponse = await Client.GetAsync(
             $"/api/v1/animals/{animalId}");
 
         // Assert - Get
@@ -226,7 +222,7 @@ public class AnimalControllerTests
     public async Task CreateAnimal_ThenDeleteAnimal_GetReturnsNotFound()
     {
         // Arrange
-        await _client.AuthenticateAsync(UserRole.SuperAdmin);
+        await Client.AuthenticateAsync(UserRole.SuperAdmin);
 
         using var content = new MultipartFormDataContent();
 
@@ -251,7 +247,7 @@ public class AnimalControllerTests
             "NewPhotos",
             "animal.jpg");
 
-        var createResponse = await _client.PostAsync(
+        var createResponse = await Client.PostAsync(
             "/api/v1/animals",
             content);
 
@@ -265,7 +261,7 @@ public class AnimalControllerTests
         Assert.True(animalId > 0);
 
         // Act - Delete
-        var deleteResponse = await _client.DeleteAsync(
+        var deleteResponse = await Client.DeleteAsync(
             $"/api/v1/animals/{animalId}");
 
         // Assert - Delete
@@ -274,7 +270,7 @@ public class AnimalControllerTests
             deleteResponse.StatusCode);
 
         // Act - Get deleted animal
-        var getResponse = await _client.GetAsync(
+        var getResponse = await Client.GetAsync(
             $"/api/v1/animals/{animalId}");
 
         // Assert - Get
@@ -290,12 +286,12 @@ public class AnimalControllerTests
         const string email = "integration-user@example.com";
         const string password = "TestUser123!";
 
-        await _factory.CreateUserAsync(
+        await Factory.CreateUserAsync(
             email,
             password,
             UserRole.User);
 
-        await _client.AuthenticateAsync(
+        await Client.AuthenticateAsync(
             UserRole.User,
             email,
             password);
@@ -304,7 +300,7 @@ public class AnimalControllerTests
             new MultipartFormDataContent();
 
         // Act
-        var response = await _client.PostAsync(
+        var response = await Client.PostAsync(
             "/api/v1/animals",
             content);
 
@@ -318,7 +314,7 @@ public class AnimalControllerTests
     public async Task CreateAnimal_ThenUpdateAnimal_ReturnsUpdatedAnimal()
     {
         // Arrange
-        await _client.AuthenticateAsync(
+        await Client.AuthenticateAsync(
             UserRole.SuperAdmin);
 
         using var createContent =
@@ -326,7 +322,7 @@ public class AnimalControllerTests
                 .CreateValidCreateRequest();
 
         var createResponse =
-            await _client.PostAsync(
+            await Client.PostAsync(
                 "/api/v1/animals",
                 createContent);
 
@@ -342,7 +338,7 @@ public class AnimalControllerTests
 
         // Get created animal so we know its image IDs.
         var initialGetResponse =
-            await _client.GetAsync(
+            await Client.GetAsync(
                 $"/api/v1/animals/{animalId}");
 
         Assert.Equal(
@@ -369,7 +365,7 @@ public class AnimalControllerTests
                     existingPhotoIds);
 
         var updateResponse =
-            await _client.PutAsync(
+            await Client.PutAsync(
                 "/api/v1/animals",
                 updateContent);
 
@@ -379,7 +375,7 @@ public class AnimalControllerTests
 
         // Get again
         var getResponse =
-            await _client.GetAsync(
+            await Client.GetAsync(
                 $"/api/v1/animals/{animalId}");
 
         Assert.Equal(
@@ -424,5 +420,175 @@ public class AnimalControllerTests
 
         Assert.NotEmpty(
             updatedAnimal.Images);
+    }
+
+    [Fact]
+    public async Task UpdateAnimal_WithoutExistingPhotoIds_RemovesOldImages()
+    {
+        // Arrange
+        await Client.AuthenticateAsync(
+            UserRole.SuperAdmin);
+
+        using var createContent =
+            AnimalRequestFactory
+                .CreateValidCreateRequest();
+
+        var createResponse =
+            await Client.PostAsync(
+                "/api/v1/animals",
+                createContent);
+
+        Assert.Equal(
+            HttpStatusCode.Created,
+            createResponse.StatusCode);
+
+        var animalId =
+            await createResponse.Content
+                .ReadFromJsonAsync<int>();
+
+        Assert.True(animalId > 0);
+
+        // Verify that the animal initially has an image
+        var initialGetResponse =
+            await Client.GetAsync(
+                $"/api/v1/animals/{animalId}");
+
+        Assert.Equal(
+            HttpStatusCode.OK,
+            initialGetResponse.StatusCode);
+
+        var initialAnimal =
+            await initialGetResponse.Content
+                .ReadFromJsonAsync<AnimalDto>();
+
+        Assert.NotNull(initialAnimal);
+        Assert.NotEmpty(initialAnimal.Images);
+
+        // Act
+        // Do NOT pass ExistingPhotoIds.
+        // That means the client wants to remove all old images.
+        using var updateContent =
+            AnimalRequestFactory
+                .CreateValidUpdateRequest(
+                    animalId,
+                    existingPhotoIds: null);
+
+        var updateResponse =
+            await Client.PutAsync(
+                "/api/v1/animals",
+                updateContent);
+
+        // Assert
+        Assert.Equal(
+            HttpStatusCode.OK,
+            updateResponse.StatusCode);
+
+        var getResponse =
+            await Client.GetAsync(
+                $"/api/v1/animals/{animalId}");
+
+        Assert.Equal(
+            HttpStatusCode.OK,
+            getResponse.StatusCode);
+
+        var updatedAnimal =
+            await getResponse.Content
+                .ReadFromJsonAsync<AnimalDto>();
+
+        Assert.NotNull(updatedAnimal);
+
+        Assert.Empty(updatedAnimal.Images);
+    }
+
+    [Fact]
+    public async Task UpdateAnimal_WithNewPhoto_ReplacesOldPhoto()
+    {
+        // Arrange
+        await Client.AuthenticateAsync(
+            UserRole.SuperAdmin);
+
+        using var createContent =
+            AnimalRequestFactory
+                .CreateValidCreateRequest();
+
+        var createResponse =
+            await Client.PostAsync(
+                "/api/v1/animals",
+                createContent);
+
+        Assert.Equal(
+            HttpStatusCode.Created,
+            createResponse.StatusCode);
+
+        var animalId =
+            await createResponse.Content
+                .ReadFromJsonAsync<int>();
+
+        Assert.True(animalId > 0);
+
+        // Get original animal
+        var initialGetResponse =
+            await Client.GetAsync(
+                $"/api/v1/animals/{animalId}");
+
+        Assert.Equal(
+            HttpStatusCode.OK,
+            initialGetResponse.StatusCode);
+
+        var initialAnimal =
+            await initialGetResponse.Content
+                .ReadFromJsonAsync<AnimalDto>();
+
+        Assert.NotNull(initialAnimal);
+
+        var initialImage =
+            Assert.Single(initialAnimal.Images);
+
+        var oldImageId = initialImage.Id;
+
+        // Act
+        // existingPhotoIds is null:
+        // old photo should be removed.
+        //
+        // addNewPhoto is true:
+        // new photo should be created.
+        using var updateContent =
+            AnimalRequestFactory
+                .CreateValidUpdateRequest(
+                    animalId,
+                    existingPhotoIds: null,
+                    addNewPhoto: true);
+
+        var updateResponse =
+            await Client.PutAsync(
+                "/api/v1/animals",
+                updateContent);
+
+        // Assert - Update
+        Assert.Equal(
+            HttpStatusCode.OK,
+            updateResponse.StatusCode);
+
+        // Get updated animal
+        var getResponse =
+            await Client.GetAsync(
+                $"/api/v1/animals/{animalId}");
+
+        Assert.Equal(
+            HttpStatusCode.OK,
+            getResponse.StatusCode);
+
+        var updatedAnimal =
+            await getResponse.Content
+                .ReadFromJsonAsync<AnimalDto>();
+
+        Assert.NotNull(updatedAnimal);
+
+        var newImage =
+            Assert.Single(updatedAnimal.Images);
+
+        Assert.NotEqual(
+            oldImageId,
+            newImage.Id);
     }
 }

@@ -24,6 +24,11 @@ public class AnimalMappingProfile : Profile
         CreateMap<PublicAnimal, PublicAnimalDto>();
 
         CreateMap<Animal, PublicAnimal>()
-           .ForMember(dest => dest.Url, opt => opt.MapFrom(src => src.Images.First().Url));
+            .ForMember(
+                dest => dest.Url,
+                opt => opt.MapFrom(src =>
+                    src.Images
+                        .Select(x => x.Url)
+                        .FirstOrDefault() ?? string.Empty));
     }
 }

@@ -1,5 +1,5 @@
-﻿using System.Net.Http.Headers;
-using Domain.Enums;
+﻿using Domain.Enums;
+using System.Net.Http.Headers;
 
 namespace WebApi.IntegrationTests.Factories;
 
@@ -51,7 +51,8 @@ public static class AnimalRequestFactory
         string name = "Updated Integration Dog",
         string breed = "Golden Retriever",
         string description = "Updated by integration test",
-        string healthNote = "Healthy")
+        string healthNote = "Healthy",
+        bool addNewPhoto = false)
     {
         var content = new MultipartFormDataContent();
 
@@ -109,23 +110,30 @@ public static class AnimalRequestFactory
             }
         }
 
+        if (addNewPhoto)
+        {
+            AddPhoto(
+                content,
+                fileName: "updated-animal.jpg");
+        }
+
         return content;
     }
 
     private static void AddPhoto(
-        MultipartFormDataContent content)
+        MultipartFormDataContent content,
+        string fileName = "animal.jpg")
     {
         var photoContent =
             new ByteArrayContent(
                 new byte[] { 1, 2, 3, 4, 5 });
 
         photoContent.Headers.ContentType =
-            new MediaTypeHeaderValue(
-                "image/jpeg");
+            new MediaTypeHeaderValue("image/jpeg");
 
         content.Add(
             photoContent,
             "NewPhotos",
-            "animal.jpg");
+            fileName);
     }
 }

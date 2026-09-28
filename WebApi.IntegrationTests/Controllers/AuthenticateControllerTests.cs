@@ -6,15 +6,13 @@ using WebApi.IntegrationTests.Infrastructure;
 
 namespace WebApi.IntegrationTests.Controllers;
 
-public class AuthenticateControllerTests
-    : IClassFixture<CustomWebApplicationFactory>
+public class AuthenticateControllerTests : IntegrationTestBase
 {
-    private readonly HttpClient _client;
 
     public AuthenticateControllerTests(
-        CustomWebApplicationFactory factory)
+       CustomWebApplicationFactory factory)
+       : base(factory)
     {
-        _client = factory.CreateClient();
     }
 
     [Fact]
@@ -28,7 +26,7 @@ public class AuthenticateControllerTests
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync(
+        var response = await Client.PostAsJsonAsync(
             "/api/v1/authenticate/sign-in",
             request);
 
@@ -47,7 +45,7 @@ public class AuthenticateControllerTests
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync(
+        var response = await Client.PostAsJsonAsync(
             "/api/v1/authenticate/sign-in",
             request);
 

@@ -1,5 +1,6 @@
 ﻿using Application.Interfaces.Services;
 using Domain.Models;
+using Infrastructure.Persistance.Data;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -8,57 +9,67 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using Npgsql;
+using Respawn;
 using WebApi.IntegrationTests.Fakes;
 
 namespace WebApi.IntegrationTests.Infrastructure;
 
-public class CustomWebApplicationFactory : WebApplicationFactory<Program>
+public class CustomWebApplicationFactory
+    : WebApplicationFactory<Program>
 {
+    private const string TestConnectionString =
+        "Host=localhost;Port=5432;Database=petspets_test;Username=petspets;Password=petspets_dev_password";
+
+    private Respawner? _respawner;
+
     protected override IHost CreateHost(IHostBuilder builder)
     {
         builder.ConfigureHostConfiguration(configuration =>
         {
-            configuration.AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["ConnectionStrings:DefaultConnection"] =
-                    "Host=localhost;Port=5432;Database=petspets_test;Username=petspets;Password=petspets_dev_password",
+            configuration.AddInMemoryCollection(
+                new Dictionary<string, string?>
+                {
+                    ["ConnectionStrings:DefaultConnection"] =
+                        TestConnectionString,
 
-                ["Jwt:Key"] =
-                    "IntegrationTestJwtKey_12345678901234567890",
+                    ["Jwt:Key"] =
+                        "IntegrationTestJwtKey_12345678901234567890",
 
-                ["Jwt:Issuer"] =
-                    "IntegrationTests",
+                    ["Jwt:Issuer"] =
+                        "IntegrationTests",
 
-                ["Jwt:Audience"] =
-                    "IntegrationTests",
+                    ["Jwt:Audience"] =
+                        "IntegrationTests",
 
-                ["InitialUserCredentials:UserName"] =
-                    "integration-admin",
+                    ["InitialUserCredentials:UserName"] =
+                        "integration-admin",
 
-                ["InitialUserCredentials:Password"] =
-                    "TestAdmin123!",
+                    ["InitialUserCredentials:Password"] =
+                        "TestAdmin123!",
 
-                ["InitialUserCredentials:Email"] =
-                    "integration-admin@example.com",
+                    ["InitialUserCredentials:Email"] =
+                        "integration-admin@example.com",
 
-                ["SendGridSettings:ApiKey"] =
-                    "integration-test-api-key",
+                    ["SendGridSettings:ApiKey"] =
+                        "integration-test-api-key",
 
-                ["S3Settings:AccessKey"] =
-                    "integration-test-access-key",
+                    ["S3Settings:AccessKey"] =
+                        "integration-test-access-key",
 
-                ["S3Settings:SecretKey"] =
-                    "integration-test-secret-key",
+                    ["S3Settings:SecretKey"] =
+                        "integration-test-secret-key",
 
-                ["S3Settings:Region"] =
-                    "eu-north-1"
-            });
+                    ["S3Settings:Region"] =
+                        "eu-north-1"
+                });
         });
 
         return base.CreateHost(builder);
     }
 
-    protected override void ConfigureWebHost(IWebHostBuilder builder)
+    protected override void ConfigureWebHost(
+        IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
 
@@ -66,8 +77,51 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
         {
             services.RemoveAll<IFileStorageService>();
 
-            services.AddSingleton<IFileStorageService, FakeFileStorageService>();
+            services.AddSingleton<
+                IFileStorageService,
+                FakeFileStorageService>();
         });
+    }
+
+    public async Task ResetDatabaseAsync()
+    {
+        await using var connection =
+            new NpgsqlConnection(TestConnectionString);
+
+        await connection.OpenAsync();
+
+        _respawner ??=
+            await Respawner.CreateAsync(
+                connection,
+                new RespawnerOptions
+                {
+                    DbAdapter = DbAdapter.Postgres,
+
+                    SchemasToInclude =
+                    [
+                        "public"
+                    ],
+
+                    TablesToIgnore =
+                    [
+                        "__EFMigrationsHistory"
+                    ]
+                });
+
+        await _respawner.ResetAsync(connection);
+
+        await SeedDatabaseAsync();
+    }
+
+    private async Task SeedDatabaseAsync()
+    {
+        using var scope = Services.CreateScope();
+
+        var initializer =
+            scope.ServiceProvider
+                .GetRequiredService<DatabaseInitializer>();
+
+        await initializer.InitializeAsync();
     }
 
     public async Task CreateUserAsync(
