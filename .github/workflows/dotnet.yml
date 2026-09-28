@@ -10,9 +10,13 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    env:
+      TEST_DATABASE_CONNECTION_STRING: ${{ secrets.TEST_DATABASE_CONNECTION_STRING }}
+      NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
+
     services:
       postgres:
-        image: postgres:17
+        image: postgres:17-alpine
         env:
           POSTGRES_USER: petspets
           POSTGRES_PASSWORD: petspets_dev_password
@@ -21,8 +25,8 @@ jobs:
           - 5432:5432
         options: >-
           --health-cmd="pg_isready -U petspets -d petspets_test"
-          --health-interval=10s
-          --health-timeout=5s
+          --health-interval=5s
+          --health-timeout=3s
           --health-retries=5
 
     steps:
@@ -32,9 +36,11 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
+          cache: true
+          cache-dependency-path: '**/packages.lock.json'
 
       - name: Restore dependencies
-        run: dotnet restore
+        run: dotnet restore --locked-mode
 
       - name: Build
         run: dotnet build --no-restore
