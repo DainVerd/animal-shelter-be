@@ -218,4 +218,65 @@ public class AnimalControllerTests
 
         Assert.NotEmpty(animal.Images);
     }
+
+    [Fact]
+    public async Task CreateAnimal_ThenDeleteAnimal_GetReturnsNotFound()
+    {
+        // Arrange
+        await _client.AuthenticateAsync(UserRole.SuperAdmin);
+
+        using var content = new MultipartFormDataContent();
+
+        content.Add(new StringContent("Delete Test Dog"), "Name");
+        content.Add(new StringContent("Labrador"), "Breed");
+        content.Add(new StringContent("Animal for delete integration test"), "Description");
+        content.Add(new StringContent(Gender.Male.ToString()), "Gender");
+        content.Add(new StringContent(AnimalSize.Medium.ToString()), "Size");
+        content.Add(new StringContent(Temperament.Friendly.ToString()), "Temperament");
+        content.Add(new StringContent("2022-05-15"), "DateOfBirth");
+        content.Add(new StringContent("false"), "IsSterilized");
+        content.Add(new StringContent("true"), "IsVaccinated");
+
+        using var photoContent =
+            new ByteArrayContent(new byte[] { 1, 2, 3, 4, 5 });
+
+        photoContent.Headers.ContentType =
+            new System.Net.Http.Headers.MediaTypeHeaderValue("image/jpeg");
+
+        content.Add(
+            photoContent,
+            "NewPhotos",
+            "animal.jpg");
+
+        var createResponse = await _client.PostAsync(
+            "/api/v1/animals",
+            content);
+
+        Assert.Equal(
+            HttpStatusCode.Created,
+            createResponse.StatusCode);
+
+        var animalId =
+            await createResponse.Content.ReadFromJsonAsync<int>();
+
+        Assert.True(animalId > 0);
+
+        // Act - Delete
+        var deleteResponse = await _client.DeleteAsync(
+            $"/api/v1/animals/{animalId}");
+
+        // Assert - Delete
+        Assert.Equal(
+            HttpStatusCode.OK,
+            deleteResponse.StatusCode);
+
+        // Act - Get deleted animal
+        var getResponse = await _client.GetAsync(
+            $"/api/v1/animals/{animalId}");
+
+        // Assert - Get
+        Assert.Equal(
+            HttpStatusCode.NotFound,
+            getResponse.StatusCode);
+    }
 }
