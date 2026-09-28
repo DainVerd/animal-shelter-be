@@ -1,7 +1,12 @@
-﻿using Microsoft.AspNetCore.Hosting;
+﻿using Application.Interfaces.Services;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using WebApi.IntegrationTests.Fakes;
 
 namespace WebApi.IntegrationTests.Infrastructure;
 
@@ -54,5 +59,12 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
+
+        builder.ConfigureTestServices(services =>
+        {
+            services.RemoveAll<IFileStorageService>();
+
+            services.AddSingleton<IFileStorageService, FakeFileStorageService>();
+        });
     }
 }

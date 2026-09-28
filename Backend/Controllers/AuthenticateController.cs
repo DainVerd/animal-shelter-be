@@ -1,6 +1,5 @@
 ﻿using Application.CORS.Commands.Authentication;
 using Application.Dtos;
-using Application.Entities.Common;
 using Application.Exceptions;
 using Application.Interfaces.Services;
 using Application.ViewModels;
@@ -10,7 +9,6 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using System.Net;
 
 namespace WebApi.Controllers;
 
