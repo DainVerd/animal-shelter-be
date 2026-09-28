@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using System;
@@ -154,7 +155,16 @@ public class Program
 
             using (var scope = app.Services.CreateScope())
             {
-                var initializer = scope.ServiceProvider.GetRequiredService<DatabaseInitializer>();
+                var context = scope.ServiceProvider.GetRequiredService<DataContext>();
+
+                if (app.Environment.IsEnvironment("Testing"))
+                {
+                    await context.Database.MigrateAsync();
+                }
+
+                var initializer = scope.ServiceProvider
+                    .GetRequiredService<DatabaseInitializer>();
+
                 await initializer.InitializeAsync();
             }
 
@@ -203,6 +213,7 @@ public class Program
         catch (Exception ex)
         {
             Log.Fatal(ex, "Application terminated unexpectedly");
+            throw;
         }
         finally
         {
