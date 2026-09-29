@@ -1,4 +1,6 @@
-﻿namespace WebApi.IntegrationTests.Infrastructure;
+﻿using Microsoft.AspNetCore.Mvc.Testing;
+
+namespace WebApi.IntegrationTests.Infrastructure;
 
 public abstract class IntegrationTestBase
     : IClassFixture<CustomWebApplicationFactory>,
@@ -12,7 +14,12 @@ public abstract class IntegrationTestBase
         CustomWebApplicationFactory factory)
     {
         Factory = factory;
-        Client = factory.CreateClient();
+        Client = factory.CreateClient(
+     new WebApplicationFactoryClientOptions
+     {
+         BaseAddress = new Uri("https://localhost"),
+         HandleCookies = true
+     });
     }
 
     public async ValueTask InitializeAsync()
