@@ -82,6 +82,11 @@ public class CustomWebApplicationFactory
             services.AddSingleton<
                 IFileStorageService,
                 FakeFileStorageService>();
+
+            services.RemoveAll<IEmailService>();
+            services.AddSingleton<FakeEmailService>();
+            services.AddSingleton<IEmailService>(
+                sp => sp.GetRequiredService<FakeEmailService>());
         });
     }
 
