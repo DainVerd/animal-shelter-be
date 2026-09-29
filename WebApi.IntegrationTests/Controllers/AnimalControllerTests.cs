@@ -1,6 +1,8 @@
 ﻿using Application.Constants;
 using Application.Dtos.Animal;
 using Domain.Enums;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using System.Net.Http.Json;
 using WebApi.IntegrationTests.Extensions;
@@ -525,5 +527,94 @@ public class AnimalControllerTests
             HttpStatusCode.BadRequest,
             response.StatusCode);
     }
-    
+    [Fact]
+    public async Task UpdateAnimal_WithNonExistingId_ReturnsNotFound()
+    {
+        // Arrange
+        await Client.AuthenticateAsync(
+            UserRole.SuperAdmin);
+
+        using var content =
+            AnimalRequestFactory
+                .CreateValidUpdateRequest(
+                    id: 999999,
+                    existingPhotoIds: []);
+
+        // Act
+        var response =
+            await Client.PutAsync(
+                "/api/v1/animals",
+                content);
+
+        // Assert
+        Assert.Equal(
+            HttpStatusCode.NotFound,
+            response.StatusCode);
+    }
+    [Fact]
+    public async Task DeleteAnimal_WithNonExistingId_ReturnsNotFound()
+    {
+        // Arrange
+        await Client.AuthenticateAsync(
+            UserRole.SuperAdmin);
+
+        // Act
+        var response =
+            await Client.DeleteAsync(
+                "/api/v1/animals/999999");
+
+        // Assert
+        Assert.Equal(
+            HttpStatusCode.NotFound,
+            response.StatusCode);
+    }
+    [Fact]
+    public async Task DeleteAnimal_WithInvalidId_ReturnsBadRequest()
+    {
+        // Arrange
+        await Client.AuthenticateAsync(
+            UserRole.SuperAdmin);
+
+        // Act
+        var response =
+            await Client.DeleteAsync(
+                "/api/v1/animals/0");
+
+        // Assert
+        Assert.Equal(
+            HttpStatusCode.BadRequest,
+            response.StatusCode);
+    }
+    [Fact]
+    public async Task DeleteAnimal_WithInvalidId_ReturnsValidationProblem()
+    {
+        // Arrange
+        await Client.AuthenticateAsync(
+            UserRole.SuperAdmin);
+
+        // Act
+        var response =
+            await Client.DeleteAsync(
+                "/api/v1/animals/0");
+
+        // Assert
+        Assert.Equal(
+            HttpStatusCode.BadRequest,
+            response.StatusCode);
+
+        var problem =
+            await response.Content
+                .ReadFromJsonAsync<ProblemDetails>();
+
+        Assert.NotNull(problem);
+
+        Assert.Equal(
+            "Validation error",
+            problem.Title);
+
+        Assert.Equal(
+            StatusCodes.Status400BadRequest,
+            problem.Status);
+    }
+
 }
