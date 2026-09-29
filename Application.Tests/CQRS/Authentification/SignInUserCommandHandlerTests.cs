@@ -1,5 +1,6 @@
 ﻿using Application.CORS.Commands.Authentication;
 using Application.Entities;
+using Application.Exceptions;
 using Application.Interfaces;
 using Application.Interfaces.Repositories;
 using Application.Interfaces.Services;
@@ -126,7 +127,7 @@ public class SignInUserCommandHandlerTests
         _userServiceMock.Setup(x => x.CheckPasswordAsync(user, command.Model.Password)).ReturnsAsync(false);
 
         // Act & Assert
-        await Assert.ThrowsAsync<ApplicationException>(() => _sut.Handle(command, CancellationToken.None));
+        await Assert.ThrowsAsync<UnauthorizedException>(() => _sut.Handle(command, CancellationToken.None));
         _userServiceMock.Verify(x => x.IncrementAccessFailedCountAsync(user), Times.Once);
         _userServiceMock.Verify(x => x.ResetAccessFailedCountAsync(user), Times.Never);
     }

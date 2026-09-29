@@ -39,11 +39,11 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, S
             throw new UnauthorizedException(ErrorMessages.GetMessage(ErrorCode.NotFound));
 
         if (!_httpContextAccessor.HttpContext.Request.Cookies.TryGetValue("X-Refresh-Token", out var refreshToken) || string.IsNullOrEmpty(refreshToken))
-            throw new ApplicationException(ErrorMessages.GetMessage(ErrorCode.RefreshTokenInvalid));
+            throw new UnauthorizedException(ErrorMessages.GetMessage(ErrorCode.RefreshTokenInvalid));
 
         var storedToken = await _unitOfWork.RefreshTokens.GetRefreshTokenAsync(refreshToken, cancellationToken);
         if (storedToken == null || storedToken.IsRevoked || storedToken.ExpiresAt < DateTime.UtcNow)
-            throw new ApplicationException(ErrorMessages.GetMessage(ErrorCode.RefreshTokenInvalid));
+            throw new UnauthorizedException(ErrorMessages.GetMessage(ErrorCode.RefreshTokenInvalid));
 
         var user = await _userService.GetUserByIdAsync(storedToken.UserId);
         if (user is null)

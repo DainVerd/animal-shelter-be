@@ -64,10 +64,10 @@ public class RefreshTokenCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_WhenRefreshTokenCookieIsMissing_ThrowApplicationException()
+    public async Task Handle_WhenRefreshTokenCookieIsMissing_ThrowUnauthorizedException()
     {
         // Act & Assert
-        await Assert.ThrowsAsync<ApplicationException>(() => _sut.Handle(new RefreshTokenCommand(), CancellationToken.None));
+        await Assert.ThrowsAsync<UnauthorizedException>(() => _sut.Handle(new RefreshTokenCommand(), CancellationToken.None));
     }
 
     [Theory]
@@ -92,7 +92,7 @@ public class RefreshTokenCommandHandlerTests
         SetupMockRepository(repoMock);
 
         // Act & Assert
-        await Assert.ThrowsAsync<ApplicationException>(() => _sut.Handle(new RefreshTokenCommand(), CancellationToken.None));
+        await Assert.ThrowsAsync<UnauthorizedException>(() => _sut.Handle(new RefreshTokenCommand(), CancellationToken.None));
     }
 
     [Fact]

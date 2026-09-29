@@ -57,7 +57,7 @@ public class SignInUserCommandHandler : IRequestHandler<SignInUserCommand, SignI
         {
             await _userService.IncrementAccessFailedCountAsync(user);
 
-            throw new ApplicationException(ErrorMessages.GetMessage(ErrorCode.InvalidPassword));
+            throw new UnauthorizedException(ErrorMessages.GetMessage(ErrorCode.InvalidPassword));
         }
 
         await _userService.ResetAccessFailedCountAsync(user);
